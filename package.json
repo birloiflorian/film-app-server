@@ -1,0 +1,26 @@
+{
+  "name": "movie-app-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server/server.js"
+  },
+  "engines": {
+    "node": "6.9.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://cryst1an@bitbucket.org/cryst1an/movie-app-backend.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/cryst1an/movie-app-backend#readme",
+  "dependencies": {
+    "body-parser": "1.18.3",
+    "express": "4.14.0",
+    "mongodb": "2.2.5",
+    "mongoose": "4.5.9",
+    "request": "2.73.0"
+  }
+}
