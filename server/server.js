@@ -1,22 +1,18 @@
 const express = require('express');
-var {
-    mongoose
-} = require('./db/mongoose');
-var {
-    ObjectID
-} = require('mongodb');
+const {mongoose} = require('./db/mongoose');
+const cors = require('cors')
+const {ObjectID} = require('mongodb');
 var bodyParser = require('body-parser');
 const _ = require('lodash');
 
 
-var {
-    User
-} = require('./models/user');
+var {User} = require('./models/user');
 
 var app = express();
 const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
+app.use(cors());
 
 app.get('/', (req, res) => {
     res.send("Works");
