@@ -3,6 +3,7 @@ const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
 const bcrcypt = require('bcryptjs');
+const config = require('./../config/config.json');
 
 
 var UserSchema = new mongoose.Schema({
@@ -27,53 +28,22 @@ var UserSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
-    tokens: [{
-        access: {
-            type: String,
-            required: true
-        },
-        token: {
-            type: String,
-            required: true
-        }
-    }]
+    token: {
+        type: String
+    },
+    refresh_token: {
+        type: String
+    }
 });
 
 UserSchema.methods.generateAuthToken = function () {
     var user = this;
     var access = 'auth';
 
-    var token = jwt.sign({
-        _id: user._id.toHexString(),
-        access
-    }, 'abc123').toString();
-
-    user.tokens = user.tokens.concat([{ access, token }]);
+    var token = jwt.sign({ _id: user._id.toHexString(), access }, 'abc123', {expiresIn: config.tokenLife}).toString();
 
     return user.save().then(() => {
         return token;
-    });
-};
-
-UserSchema.statics.findByCredentials = function (username, password) {
-    var User = this;
-
-    return User.find().then((docs) => {
-        const user = docs[0];
-
-        if (!user) {
-            return Promise.reject();
-        }
-
-        return new Promise((resolve, reject) => {
-            // Use bcrypt.compare to compare password and user.password
-            if (user.password == password) {
-                resolve(user);
-            } else {
-                reject();
-            }
-        });
-
     });
 };
 
@@ -81,8 +51,29 @@ UserSchema.methods.toJSON = function() {
     const user = this;
     const userObject = user.toObject();
 
-    return _.pick(userObject, ['_id', 'email']);
+    return _.pick(userObject, ['_id', 'email', 'username']);
 }
+
+UserSchema.statics.findByCredentials = function (username, password) {
+    var User = this;
+    console.log("username", username);
+    return User.findOne({username}).then((user) => {
+        if (!user) {
+            return Promise.reject();
+        }
+
+        return new Promise((resolve, reject) => {
+            bcrcypt.compare(password, user.password, (err, res) => {
+                if(res) {
+                    resolve(user);
+                }else {
+                    reject();
+                }
+            });
+        });
+
+    });
+};
 
 UserSchema.statics.findByToken = function(token) {
     const User = this;

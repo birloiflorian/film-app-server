@@ -1,0 +1,6 @@
+{
+    "secret": "abc123",
+    "refreshTokenSecret": "cde456",
+    "tokenLife": "900",
+    "refreshTokenLife": "86400"
+}
