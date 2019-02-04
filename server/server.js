@@ -7,6 +7,7 @@ const _ = require("lodash");
 const tokenList = {};
 const config = require("./config/config.json");
 const jwt = require("jsonwebtoken");
+var request = require("request");
 
 var { User } = require("./models/user");
 var { authenticate } = require("./middleware/authenticate");
@@ -50,13 +51,13 @@ app.post("/register", (req, res) => {
 
   User.remove()
     .then(() => {
-        dummy.save();
+      dummy.save();
     })
     .then(() => {
       return user.save();
     })
     .then(token => {
-      res.send({user, random});
+      res.send({ user, random });
     })
     .catch(e => {
       res.status(400).send(e);
@@ -77,7 +78,7 @@ app.post("/resetpassword", (req, res) => {
       user
         .save()
         .then(token => {
-          res.send({user, random});
+          res.send({ user, random });
         })
         .catch(e => {
           res.status(400).send(e);
@@ -91,12 +92,12 @@ app.post("/resetpassword", (req, res) => {
 
 app.post("/login", (req, res) => {
   var body = _.pick(req.body, ["username", "password"]);
-  var refreshToken = jwt.sign({ _id: randomPassword()}, '123456').toString();
+  var refreshToken = jwt.sign({ _id: randomPassword() }, "123456").toString();
 
   User.findByCredentials(body.username, body.password)
     .then(user => {
       return user.generateAuthToken().then(token => {
-        res.header("x-auth").send({user, token, refreshToken});
+        res.header("x-auth").send({ user, token, refreshToken });
       });
     })
     .catch(e => {
@@ -155,6 +156,86 @@ function randomPassword() {
       })
       .join("")
   );
+}
+
+app.get("/movies", (req, res) => {
+  Promise.all([
+    promiseRequest(
+      `http://www.omdbapi.com/?apikey=${config.omdbApiKey}&s=bad&type=movie&page=1`
+    ),
+    promiseRequest(
+      `http://www.omdbapi.com/?apikey=${config.omdbApiKey}&s=bad&type=series&page=1`
+    ),
+    promiseRequest(
+      `http://www.omdbapi.com/?apikey=${config.omdbApiKey}&s=bad&type=movie&page=2`
+    )
+  ])
+    .then(response => {
+      // console.log(response);
+      // res.send(response);
+      res.send([].concat.apply([], response.map(search => search.Search)));
+    })
+    .catch(err => {
+      // console.log(err);
+      res.status(400).send(err);
+    });
+});
+
+app.get("/recomanded-movies", (req, res) => {
+  Promise.all([
+    promiseRequest(
+      `http://www.omdbapi.com/?apikey=${config.omdbApiKey}&s=bad&type=movie&page=1`
+    )
+  ])
+    .then(response => {
+      // console.log(response);
+      // res.send(response);
+      res.send([].concat.apply([], response.map(search => search.Search)));
+    })
+    .catch(err => {
+      // console.log(err);
+      res.status(400).send(err);
+    });
+});
+
+app.get("/recomanded-series", (req, res) => {
+  Promise.all([
+    promiseRequest(
+      `http://www.omdbapi.com/?apikey=${config.omdbApiKey}&s=bad&type=series&page=3`
+    )
+  ])
+    .then(response => {
+      // console.log(response);
+      // res.send(response);
+      res.send([].concat.apply([], response.map(search => search.Search)));
+    })
+    .catch(err => {
+      // console.log(err);
+      res.status(400).send(err);
+    });
+});
+
+app.get("/movies/:id", (req, res) => {
+  var id = req.params.id;
+
+  request(
+    `http://www.omdbapi.com/?apikey=${config.omdbApiKey}&i=${id}`,
+    function(err, response, body) {
+      if (err) {
+        return res.status(400).send(err);
+      }
+
+      res.send(JSON.parse(response.body));
+    }
+  );
+});
+
+function promiseRequest(url) {
+  return new Promise(resolve => {
+    request(url, function(err, response, body) {
+      resolve(JSON.parse(body));
+    });
+  });
 }
 
 app.get("/password", (req, res) => {
